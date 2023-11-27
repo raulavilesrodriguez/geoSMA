@@ -143,6 +143,10 @@ tipoOtecel <- join_parroquias(db.otecel$DPA, df.poblacion)
 db.otecel <- cbind(db.otecel, as.matrix(tipoOtecel))
 colnames(db.otecel)[ncol(db.otecel)] <- "tipo"
 
+# to suppress duplicate to sector x y z
+db.otecel <- db.otecel |> group_by(`NOMBRE DE LA RADIOBASE`) |>
+  distinct()
+
 #Add Propagation radio[Km]
 colnames(db.otecel)[2] <- "banda"
 

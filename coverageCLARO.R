@@ -36,6 +36,10 @@ tipoConecel <- join_parroquias(db.conecel$DPA, df.poblacion)
 db.conecel <- cbind(db.conecel, as.matrix(tipoConecel))
 colnames(db.conecel)[ncol(db.conecel)] <- "tipo"
 
+# to suppress duplicate to sector x y z
+colnames(db.conecel)[1] <- 'NOMBRE DE LA RADIOBASE'
+db.conecel <- db.conecel |> group_by(`NOMBRE DE LA RADIOBASE`) |>
+  distinct()
 
 #Add Propagation radio[Km]
 colnames(db.conecel)[2] <- "banda"
@@ -47,51 +51,52 @@ db.conecel <- db.conecel |>
                     ifelse(banda=='1900', urbana1900,
                     ifelse(tipo=='RURAL' & banda=='1700', ruralAWS, urbanaAWS))))))
 
-db.conecel850 <- db.conecel |> filter(banda=='850')
-db.conecel1900 <- db.conecel |> filter(banda=='1900')
-db.conecel1700 <- db.conecel |> filter(banda=='1700')
+
+db.conecel2G <- db.conecel |> filter(TECNOLOGIA=='GSM')
+db.conecel3G <- db.conecel |> filter(TECNOLOGIA=='UMTS')
+db.conecel4G <- db.conecel |> filter(TECNOLOGIA=='LTE')
 
 #----Ploting-----
 map <- leaflet() %>% addTiles()
 # Create a leaflet map
 map <- map %>%
   addCircles(
-    data = db.conecel850,
+    data = db.conecel2G,
     lng = ~LONGITUD,
     lat = ~LATITUD,
     radius = ~coverage * 1000, # Convert diameter from km to meters
-    color = "green",
-    fillOpacity = 0.1,
-    group = "850",
+    color = "#FF9209",
+    fillOpacity = 0.2,
+    group = "2G",
     weight = 0  # Set weight to 0 to remove the border
   )
 
 map <- map %>%
   addCircles(
-    data = db.conecel1900,
+    data = db.conecel3G,
     lng = ~LONGITUD,
     lat = ~LATITUD,
     radius = ~coverage * 1000, # Convert diameter from km to meters
     color = "blue",
-    fillOpacity = 0.1,
-    group = "1900",
+    fillOpacity = 0.2,
+    group = "3G",
     weight = 0  # Set weight to 0 to remove the border
   )
 
 map <- map %>%
   addCircles(
-    data = db.conecel1700,
+    data = db.conecel4G,
     lng = ~LONGITUD,
     lat = ~LATITUD,
     radius = ~coverage * 1000, # Convert diameter from km to meters
     color = "red",
-    fillOpacity = 0.1,
-    group = "1700",
+    fillOpacity = 0.2,
+    group = "4G",
     weight = 0  # Set weight to 0 to remove the border
   )
 
 # Add the layers control
 map %>% addLayersControl(
-  overlayGroups = c("850", "1900", "1700"),
+  overlayGroups = c("2G", "3G", "4G"),
   options = layersControlOptions(collapsed = FALSE)
 )
