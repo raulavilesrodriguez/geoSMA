@@ -6,6 +6,7 @@ library(hexbin)
 library(leaflethex)
 library(readxl)
 library(here)
+library(writexl)
 
 source(here::here('grades_to_decimal.R'))
 source(here::here('join_parroquias.R'))
@@ -63,9 +64,86 @@ colnames(db.cnt) <- c(
 db.cnt <- db.cnt |> group_by(`NOMBRE DE LA RADIOBASE`) |>
   distinct()
 
+# Drpo rows NAs
+dropito <- c(which(is.na(db.cnt$LATITUD)))
+db.cnt <- db.cnt[-dropito, ]
 
 
+#---Change LATITUDE---
+db.cnt <- db.cnt |> mutate(LATITUD = (strsplit(LATITUD, "[°'']")))
+lat.cnt <- grades_to_decimal(db.cnt$LATITUD)
+db.cnt$LATITUD <- lat.cnt
+
+#---Change LONGUITUDE---
+db.cnt <- db.cnt |> mutate(LONGITUD = (strsplit(LONGITUD, "[°'']")))
+long.cnt <- grades_to_decimal(db.cnt$LONGITUD)
+db.cnt$LONGITUD <- long.cnt
+
+colnames(db.cnt)[8] <- "DPA"
+
+#---Join to base poblacion to determinate if is URBAN, RURAL, ETC
+tipoCnt <- join_parroquias(db.cnt$DPA, df.poblacion)
+
+x23 <- c()
+n <- length(tipoCnt)
+x <- 1
+while (n > 0) {
+  ifelse(class(tipoCnt[[x]]) == 'character', 
+         x23 <- c(x23, tipoCnt[[x]]), 
+         x23 <- c(x23, 'RURAL'))
+  x <- x + 1
+  n <- n - 1
+  print(x)
+}
+
+db.cnt$tipo <- x23
+
+#Add Propagation radio[Km]
+colnames(db.cnt)[2] <- "banda"
+
+db.cnt <- db.cnt |> 
+  mutate(coverage = ifelse(tipo=='RURAL' & banda=='1900', rural1900, 
+                           ifelse(banda=='1900', urbana1900, 
+                                  ifelse(tipo=='RURAL' & banda=='700', rural700,
+                                         ifelse(banda=='700', urbana700,
+                                                ifelse(tipo=='RURAL' & banda=='1700', ruralAWS, urbanaAWS))))))
 
 
+db.cnt3G <- db.cnt |> filter(TECNOLOGIA == 'UMTS')
+db.cnt4G <- db.cnt |> filter(TECNOLOGIA == 'LTE')
 
+#----Ploting-----
+map <- leaflet() %>% addTiles()
+# Create a leaflet map
+map <- map %>%
+  addCircles(
+    data = db.cnt3G,
+    lng = ~LONGITUD,
+    lat = ~LATITUD,
+    radius = ~coverage * 1000, # Convert diameter from km to meters
+    color = "blue",
+    fillOpacity = 0.2,
+    group = "3G",
+    weight = 0  # Set weight to 0 to remove the border
+  )
 
+map <- map %>%
+  addCircles(
+    data = db.cnt4G,
+    lng = ~LONGITUD,
+    lat = ~LATITUD,
+    radius = ~coverage * 1000, # Convert diameter from km to meters
+    color = "red",
+    fillOpacity = 0.2,
+    group = "4G",
+    weight = 0  # Set weight to 0 to remove the border
+  )
+
+# Add the layers control
+map %>% addLayersControl(
+  overlayGroups = c("3G", "4G"),
+  options = layersControlOptions(collapsed = FALSE)
+)
+
+# Export db CNT
+writexl::write_xlsx(db.cnt, './ResultGeoTOTAL/dfcnt.xlsx')

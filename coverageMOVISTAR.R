@@ -6,6 +6,7 @@ library(hexbin)
 library(leaflethex)
 library(readxl)
 library(here)
+library(writexl)
 
 source(here::here('grades_to_decimal.R'))
 source(here::here('join_parroquias.R'))
@@ -208,3 +209,5 @@ map %>% addLayersControl(
   options = layersControlOptions(collapsed = FALSE)
 )
 
+# Export db Otecel
+writexl::write_xlsx(db.otecel, './ResultGeoTOTAL/dfotecel.xlsx')

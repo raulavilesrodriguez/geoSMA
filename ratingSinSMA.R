@@ -15,6 +15,7 @@ library(highcharter)
 library(cluster)    # clustering algorithms
 library(factoextra) # clustering algorithms & visualization
 library(NbClust) # to find the ideal number of clusters
+library(writexl)
 
 #----Read Financial statements (eeff tibble)-------
 dfsinservicio <- read_excel('dfsinservicio.xlsx')
@@ -100,10 +101,10 @@ count(dataFinal[which(dataFinal$cluster == 8),])
 count(dataFinal[which(dataFinal$cluster == 9),])
 
 dataFinal <- dataFinal |>
-  mutate(grupo = ifelse(cluster == 1 | cluster == 9, "G1",
-                        ifelse(cluster == 2 | cluster == 3 | cluster == 4, "G2",
-                               ifelse(cluster == 7, "G3", 
-                                      ifelse(cluster == 5 | cluster == 6 | cluster == 8, "G4", "G1")))))
+  mutate(grupo = ifelse(cluster == 8, "G1",
+                        ifelse(cluster == 7 | cluster == 1, "G2",
+                               ifelse(cluster == 9 | cluster == 4 , "G3", 
+                                      ifelse(cluster == 6 | cluster == 5 | cluster == 3 | cluster == 2, "G4", "G1")))))
 
 dataFinal <- dataFinal |> 
   mutate(periodo = ifelse(grupo == "G1", "1-2 años",
@@ -124,4 +125,8 @@ nrow(dataFinal |> filter(grupo == "G3"))
 # Number sities Group 4
 nrow(dataFinal |> filter(grupo == "G4"))
 
+
+dataFinal <- dataFinal |> select(-c(9:12))
+#Export tibble witout mobile service telecom
+writexl::write_xlsx(dataFinal, './ResultadosExpansión/sinservicioClasificado.xlsx')
 

@@ -6,6 +6,7 @@ library(hexbin)
 library(leaflethex)
 library(readxl)
 library(here)
+library(writexl)
 
 source(here::here('grades_to_decimal.R'))
 source(here::here('join_parroquias.R'))
@@ -100,3 +101,6 @@ map %>% addLayersControl(
   overlayGroups = c("2G", "3G", "4G"),
   options = layersControlOptions(collapsed = FALSE)
 )
+
+# Export db Conecel
+writexl::write_xlsx(db.conecel, './ResultGeoTOTAL/dbconecel.xlsx')

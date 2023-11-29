@@ -11,7 +11,7 @@ df.rbs <- read_excel(
   sheet = 'RBSxPARQ')
 df.poblacion <- read_excel('poblacion.xlsx')
 
-# transform to numeric the poblation variable
+# transform to numeric the population variable
 colnames(df.poblacion)[colnames(df.poblacion) == '2020'] <- 'poblacion' 
 df.poblacion[,9] <- lapply(df.poblacion[,9], as.numeric)
 df.poblacion$poblacion <- ifelse(is.na(df.poblacion$poblacion), 0, df.poblacion$poblacion)
@@ -72,4 +72,5 @@ df.sin2 <- left_join(df.sin, df.internet, by = "DPA_PARROQ")
 #Export tibble witout mobile service telecom
 writexl::write_xlsx(df.sin2, 'dfsinservicio.xlsx')
 
-
+# Export db TOTAL with and without service mobile telecom
+writexl::write_xlsx(df.total, 'dftotalSMA.xlsx')
