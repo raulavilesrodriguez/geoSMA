@@ -7,10 +7,13 @@ library(leaflethex)
 library(readxl)
 library(here)
 library(writexl)
+library(fontawesome)
 
 db.conecel <- read_excel('./ResultGeoTOTAL/dbconecel.xlsx')
 db.otecel <- read_excel('./ResultGeoTOTAL/dfotecel.xlsx')
 db.cnt <- read_excel('./ResultGeoTOTAL/dfcnt.xlsx')
+db.salud <- read_excel('./establecimientos/salud.xlsx')
+db.ecu911 <- read_excel('./establecimientos/911.xlsx')
 
 # Conecel
 db.conecel2G850 <- db.conecel |> filter(TECNOLOGIA == 'GSM', banda == '850')
@@ -35,10 +38,28 @@ db.cnt4G850 <- db.cnt |> filter(TECNOLOGIA == 'LTE', banda == '700')
 db.cnt4G1700 <- db.cnt |> filter(TECNOLOGIA == 'LTE', banda == '1700')
 db.cnt4G1900 <- db.cnt |> filter(TECNOLOGIA == 'LTE', banda == '1900')
 
+# Salud
+db.saludA <- db.salud |> filter(Cobertura == "Alta")
+db.saludB <- db.salud |> filter(Cobertura != 'Alta')
+
+
 
 #----Ploting-----
-map <- leaflet() %>% addTiles()
+saludIcon <- makeIcon(
+  iconUrl = "location1.png",
+  iconWidth = 38, iconHeight = 95,
+  iconAnchorX = 22, iconAnchorY = 94,
+)
+
+greenLeafIcon <- makeIcon(
+  iconUrl = "https://leafletjs.com/examples/custom-icons/leaf-green.png",
+  iconWidth = 38, iconHeight = 95,
+  iconAnchorX = 22, iconAnchorY = 94
+)
+
+
 # Create a leaflet map
+map <- leaflet() %>% addTiles()
 
 #--Conecel--
 map <- map %>%
@@ -235,6 +256,33 @@ map <- map %>%
     weight = 0  # Set weight to 0 to remove the border
   )
 
+map <- map %>%
+  addMarkers(
+    data = db.saludA,
+    lng = ~LONGITUD,
+    lat = ~LATITUD,
+    group = "Salud 1"
+  )
+
+map <- map %>%
+  addMarkers(
+    data = db.saludB,
+    lng = ~LONGITUD,
+    lat = ~LATITUD,
+    icon = saludIcon,
+    group = "Salud 2"
+  )
+
+map <- map %>%
+  addMarkers(
+    data = db.ecu911,
+    lng = ~LONGITUD,
+    lat = ~LATITUD,
+    icon = greenLeafIcon,
+    group = "Seguridad"
+  )
+
+
 # Add the layers control
 map %>% addLayersControl(
   overlayGroups = c("Conecel2G850", 
@@ -252,7 +300,10 @@ map %>% addLayersControl(
                     "Cnt3G1900",
                     "Cnt4G850",
                     "Cnt4G1700",
-                    "Cnt4G1900"
+                    "Cnt4G1900",
+                    "Salud 1",
+                    "Salud 2",
+                    "Seguridad"
                     ),
   options = layersControlOptions(collapsed = FALSE)
 )
